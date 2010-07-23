@@ -178,8 +178,11 @@ module Resque
     # Given an exception object, hands off the needed parameters to
     # the Failure module.
     def fail(exception)
+      orig_payload = payload
+      orig_attempts = payload["args"].last["attempts"]
+      orig_payload["args"].last.merge!(!{"attempts" => (orig_attempts + 1), "updated_at" => Time.now.to_i})
       Failure.create \
-        :payload   => payload,
+        :payload   => orig_payload,
         :exception => exception,
         :worker    => worker,
         :queue     => queue

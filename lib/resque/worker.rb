@@ -259,10 +259,27 @@ module Resque
       @shutdown = true
     end
 
+    # Puts the job that's currently being processed in the failure queue.
+    # I'd rather put it in the execution queue but it might immediately start again during the deployment.
+    def reenqueue_job
+      if @child
+        orig_payload = job["payload"]
+        orig_attempts = orig_payload["args"].last["attempts"]
+        orig_payload["args"].last.merge!({"attempts" => (orig_attempts + 1), "updated_at" => Time.now.to_i})
+        Failure.create \
+          :payload   => orig_payload,
+          :exception => JobInterrupted.new,
+          :worker    => self,
+          :queue     => job["queue"]
+        failed!
+      end
+    end
+
     # Kill the child and shutdown immediately.
     def shutdown!
       shutdown
       kill_child
+      reenqueue_job
     end
 
     # Kills the forked child immediately, without remorse. The job it
