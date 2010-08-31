@@ -340,12 +340,13 @@ module Resque
 
     # Runs a named hook, passing along any arguments.
     def run_hook(name, *args)
-      return unless hook = Resque.send(name)
-      msg = "Running #{name} hook"
-      msg << " with #{args.inspect}" if args.any?
-      log msg
+      Resque.send(name).each do |hook|
+        msg = "Running #{name} hook"
+        msg << " with #{args.inspect}" if args.any?
+        log msg
 
-      args.any? ? hook.call(*args) : hook.call
+        args.any? ? hook.call(*args) : hook.call
+      end
     end
 
     # Unregisters ourself as a worker. Useful when shutting down.
@@ -374,7 +375,7 @@ module Resque
       job.worker = self
       data = encode \
         :queue   => job.queue,
-        :run_at  => Time.now.to_s,
+        :run_at  => Time.now.to_i,
         :payload => job.payload
       redis.set("worker:#{self}", data)
     end
@@ -415,7 +416,7 @@ module Resque
 
     # Tell Redis we've started
     def started!
-      redis.set("worker:#{self}:started", Time.now.to_s)
+      redis.set("worker:#{self}:started", Time.now.to_i)
     end
 
     # Returns a hash explaining the Job we're currently processing, if any.
@@ -479,9 +480,9 @@ module Resque
 
     # Log a message to STDOUT if we are verbose or very_verbose.
     def log(message)
-      if verbose
+      if verbose?
         puts "*** #{message}"
-      elsif very_verbose
+      elsif very_verbose?
         time = Time.now.strftime('%I:%M:%S %Y-%m-%d')
         puts "** [#{time}] #$$: #{message}"
       end
@@ -489,7 +490,27 @@ module Resque
 
     # Logs a very verbose message to STDOUT.
     def log!(message)
-      log message if very_verbose
+      log message if very_verbose?
+    end
+
+    # Do we want to log?
+    #
+    # Returns a Boolean.
+    def verbose?
+      verbose && !negative_words.include?(verbose)
+    end
+
+    # Do we want to log a ton of stuff?
+    #
+    # Returns a Boolean.
+    def very_verbose?
+      very_verbose && !negative_words.include?(very_verbose)
+    end
+
+    # If `verbose` or `very_verbose` are set to any of these words, we
+    # want them disabled.
+    def negative_words
+      %w( 0 false off nil no )
     end
   end
 end

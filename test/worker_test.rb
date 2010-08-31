@@ -12,6 +12,14 @@ context "Resque::Worker" do
     Resque::Job.create(:jobs, SomeJob, 20, '/tmp')
   end
 
+  test "can be set to verbose" do
+    @worker.verbose = 'no'
+    assert_equal false, @worker.verbose?
+
+    @worker.verbose = true
+    assert @worker.verbose?
+  end
+
   test "can fail jobs" do
     Resque::Job.create(:jobs, BadJob)
     @worker.work(0)
@@ -202,7 +210,7 @@ context "Resque::Worker" do
   test "knows when it started" do
     time = Time.now
     @worker.work(0) do
-      assert_equal time.to_s, @worker.started.to_s
+      assert_equal time.to_i, @worker.started.to_i
     end
   end
 

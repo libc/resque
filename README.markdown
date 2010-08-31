@@ -287,9 +287,9 @@ configuration file is included under `examples/god`. We recommend this
 method.
 
 If you'd like to run multiple workers in development mode, you can do
-so using the `resque:workers` rake task:
+so using the `resque:dev:workers` rake task:
 
-    $ COUNT=5 QUEUE=* rake resque:workers
+    $ COUNT=5 QUEUE=* rake resque:dev:workers
 
 This will spawn five Resque workers, each in its own thread. Hitting
 ctrl-c should be sufficient to stop them all.
@@ -664,6 +664,9 @@ If you'd like to write your own plugin, or want to customize Resque
 using hooks (such as `Resque.after_fork`), see
 [docs/HOOKS.md](http://github.com/defunkt/resque/blob/master/docs/HOOKS.md).
 
+To clear all hooks, set nil or false:
+
+    Resque.after_fork = nil
 
 Namespaces
 ----------

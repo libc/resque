@@ -1,24 +1,6 @@
-## 1.9.8 (2010-07-20)
+## 2.0.0 (2010-??-??)
 
-* Bugfix: Worker.all should never return nil
-* monit example: Fixed Syntax Error and adding environment to the rake task
-* redis rake task: Fixed typo in copy command
-
-## 1.9.7 (2010-07-09)
-
-* Improved memory usage in Job.destroy
-* redis-namespace 0.7.0 now required
-* Bugfix: Reverted $0 changes
-* Web Bugfix: Payload-less failures in the web ui work
-
-## 1.9.6 (2010-06-22)
-
-* Bugfix: Rakefile logging works the same as all the other logging
-
-## 1.9.5 (2010-06-16)
-
-* Web Bugfix: Display the configured namespace on the stats page
-* Revert Bugfix: Make ps -o more cross platform friendly
+* Resque now uses Unix Epoch Timestamps exclusively.
 
 ## 1.9.4 (2010-06-14)
 
@@ -53,6 +35,7 @@
 ## 1.8.4 (2010-05-18)
 
 * Try to resolve redis-namespace dependency issue
+>>>>>>> master
 
 ## 1.8.3 (2010-05-17)
 
@@ -89,6 +72,7 @@
 * web: Hovering over dates shows a timestamp
 * web: AJAXify retry action for failed jobs
 * web bugfix: Fix pagination bug
+>>>>>>> master
 
 ## 1.6.1 (2010-03-25)
 
