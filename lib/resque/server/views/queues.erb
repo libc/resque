@@ -11,11 +11,19 @@
     <tr>
       <th>Class</th>
       <th>Args</th>
+      <th></th>
     </tr>
-    <% for job in (jobs = resque.peek(queue, start, 20)) %>
+    <% for encoded_job, job in (jobs = resque.peek_with_string(queue, start, 20)) %>
     <tr>
       <td class='class'><%= job['class'] %></td>
       <td class='args'><%=h job['args'].inspect %></td>
+      <td class='action'>
+        <form method="POST" action="<%=u "/queues/#{queue}" %>" onsubmit="return confirm('You cannot undelete and also deleting the task could take significant amount of time. Shall we proceed?');">
+          <input type='hidden' name='_method' value='DELETE'>
+          <input type='hidden' name='job' value='<%= h encoded_job %>'>
+          <input type="submit" name='' value='Destroy'>
+        </form>
+      </td>
     </tr>
     <% end %>
     <% if jobs.empty? %>

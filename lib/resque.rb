@@ -147,6 +147,22 @@ module Resque
     list_range("queue:#{queue}", start, count)
   end
 
+  def peek_with_string(queue, start, count = 1)
+    key = "queue:#{queue}"
+    if count == 1
+      item = redis.lindex(key, start)
+      [item, decode(item)]
+    else
+      Array(redis.lrange(key, start, start+count-1)).map do |item|
+        [item, decode(item)]
+      end
+    end
+  end
+
+  def remove_job_from_queue(queue, job)
+    redis.lrem("queue:#{queue}", 1, job)
+  end
+
   # Does the dirty work of fetching a range of items from a Redis list
   # and converting them into Ruby objects.
   def list_range(key, start = 0, count = 1)

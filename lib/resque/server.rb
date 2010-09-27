@@ -130,6 +130,11 @@ module Resque
       redirect u('queues')
     end
 
+    delete '/queues/:id' do
+      Resque.remove_job_from_queue(params[:id], params[:job])
+      redirect u("queues/#{params[:id]}")
+    end
+
     %w( overview workers ).each do |page|
       get "/#{page}.poll" do
         content_type "text/plain"
