@@ -100,6 +100,10 @@ module Resque
         "<p class='poll'>#{text}</p>"
       end
 
+      def date(date)
+        Numeric === date ? Time.at(date).to_s : date
+      end
+
     end
 
     def show(page, layout = true)
