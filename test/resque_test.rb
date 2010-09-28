@@ -222,4 +222,14 @@ context "Resque" do
   test "decode bad json" do
     assert_nil Resque.decode("{\"error\":\"Module not found \\u002\"}")
   end
+
+  # doh!
+  test 'incrmenet failure on fail' do
+    Resque::Job.create(:jobs, BadJob, {}, {"attempts" => 10})
+    @worker = Resque::Worker.new(:jobs)
+    @worker.register_worker
+    @worker.process
+
+    assert_equal 11, Resque::Failure.all["payload"]["args"].last["attempts"]
+  end
 end

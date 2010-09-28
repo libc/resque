@@ -4,6 +4,7 @@ $TESTING = true
 require 'test/unit'
 require 'rubygems'
 require 'resque'
+require 'redis/namespace'
 
 begin
   require 'redgreen'

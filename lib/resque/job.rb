@@ -179,8 +179,11 @@ module Resque
     # the Failure module.
     def fail(exception)
       orig_payload = payload
-      orig_attempts = payload["args"].last["attempts"]
-      orig_payload["args"].last.merge!(!{"attempts" => (orig_attempts + 1), "updated_at" => Time.now.to_i})
+      # zomg!
+      if (payload["args"].last["attempts"] rescue false)
+        orig_attempts = payload["args"].last["attempts"].to_i
+        orig_payload["args"].last.merge!("attempts" => (orig_attempts + 1), "updated_at" => Time.now.to_i)
+      end
       Failure.create \
         :payload   => orig_payload,
         :exception => exception,
