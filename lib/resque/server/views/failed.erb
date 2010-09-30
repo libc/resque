@@ -18,6 +18,9 @@
             <% else %>
               <a href="<%= u "failed/requeue/#{start + index - 1}" %>" rel="retry">Retry</a>
             <% end %>
+            <form method="POST" action="<%=u "/failed/delete/#{start + index - 1}" %>">
+              <input type="submit" name='' value='Delete'>
+            </form>
           </div>
         </dd>
         <dt>Class</dt>

@@ -35,6 +35,11 @@ module Resque
         Resque.redis.lset(:failed, index, Resque.encode(item))
         Job.create(item['queue'], item['payload']['class'], *item['payload']['args'])
       end
+
+      def self.delete(index)
+        item = Resque.redis.lindex(:failed, index)
+        Resque.redis.lrem(:failed, 1, item)
+      end
     end
   end
 end
