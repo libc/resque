@@ -7,6 +7,7 @@
     <input type='submit' name='' value='Remove Queue' />
   </form>
   <p class='sub'>Showing <%= start = params[:start].to_i %> to <%= start + 20 %> of <b><%=size = resque.size(queue)%></b> jobs</p>
+  <%= partial :next_more, :start => start, :size => size %>
   <table class='jobs'>
     <tr>
       <th>Class</th>

@@ -3,6 +3,7 @@
 <% index = 0 %>
 
 <p class='sub'>Showing <%=start%> to <%= start + 20 %> of <b><%= size = Resque::Failure.count %></b> jobs</p>
+<%= partial :next_more, :start => start, :size => size %>
 
 <ul class='failed'>
   <%for job in failed%>
@@ -26,7 +27,7 @@
         <dt>Class</dt>
         <dd><code><%= job['payload'] ? job['payload']['class'] : 'nil' %></code></dd>
         <dt>Arguments</dt>
-        <dd><pre><%=h job['payload'] ? show_args(job['payload']['args']) : 'nil' %></pre></dd>
+        <dd><code><%=h job['payload'] ? show_args(job['payload']['args']) : 'nil' %></code></dd>
         <dt>Exception</td>
         <dd><code><%= job['exception'] %></code></dd>
         <dt>Error</dt>
