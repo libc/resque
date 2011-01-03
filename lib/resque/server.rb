@@ -151,6 +151,22 @@ module Resque
       if Resque::Failure.url
         redirect Resque::Failure.url
       else
+        @start = params[:start].to_i
+        unless params['search']
+          @failed = Resque::Failure.all(@start, 100)
+          @size = Resque::Failure.count
+        else
+          @start = params[:start].to_i
+          @failed = []
+          count = Resque::Failure.count
+          while count > @start and @failed.size < 100
+            @failed += Resque::Failure.all([count - 100, @start].max, count).select do |job|
+              job.inspect.include? params['search']
+            end
+            count = count - 100
+          end
+          @size = @failed.size
+        end
         show :failed
       end
     end
