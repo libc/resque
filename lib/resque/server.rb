@@ -153,14 +153,14 @@ module Resque
       else
         @start = params[:start].to_i
         unless params['search']
-          @failed = Resque::Failure.all(@start, 100)
+          @failed = Resque::Failure.all_with_original_item(@start, 100)
           @size = Resque::Failure.count
         else
           @start = params[:start].to_i
           @failed = []
           count = Resque::Failure.count
           while count > @start and @failed.size < 100
-            @failed += Resque::Failure.all([count - 100, @start].max, count).select do |job|
+            @failed += Resque::Failure.all_with_original_item([count - 100, @start].max, count).select do |job|
               job.inspect.include? params['search']
             end
             count = count - 100
@@ -176,19 +176,39 @@ module Resque
       redirect u('failed')
     end
 
-    get "/failed/requeue/:index" do
-      Resque::Failure.requeue(params[:index])
+#     get "/failed/requeue/:index" do
+#       Resque::Failure.requeue(params[:index])
+#       if request.xhr?
+#         return Resque::Failure.all(params[:index])['retried_at']
+#       else
+#         redirect u('failed')
+#       end
+#     end
+
+    post "/failed/requeue" do
+      Resque::Failure.requeue_item(params['item'])
       if request.xhr?
-        return Resque::Failure.all(params[:index])['retried_at']
+        return Time.now.to_i
       else
         redirect u('failed')
       end
     end
 
-    post "/failed/delete/:index" do
-      Resque::Failure.delete(params[:index])
-      redirect u('failed')
+
+    post "/failed/delete" do
+      num = Resque::Failure.delete_item(params['item'])
+      if request.xhr?
+        return num
+      else
+        redirect u('failed')
+      end
     end
+
+#     post "/failed/delete/:index" do
+# #       puts params.inspect
+#       Resque::Failure.delete(params[:index])
+#       redirect u('failed')
+#     end
 
     get "/stats" do
       redirect url("/stats/resque")

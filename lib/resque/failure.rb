@@ -49,11 +49,15 @@ module Resque
       backend.all(start, count)
     end
 
+    def self.all_with_original_item(start = 0, count = 1)
+      backend.all_with_original_item(start, count)
+    end
+
     # The string url of the backend's web interface, if any.
     def self.url
       backend.url
     end
-    
+
     # Clear all failure jobs
     def self.clear
       backend.clear
@@ -66,5 +70,14 @@ module Resque
     def self.delete(index)
       backend.delete(index)
     end
+
+    def self.delete_item(item)
+      backend.delete_item(item)
+    end
+
+    def self.requeue_item(item)
+      backend.requeue_item(item)
+    end
+
   end
 end

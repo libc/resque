@@ -1,38 +1,44 @@
 <% index = 0 %>
-<form><p><input name='search' type="search" placeholder="search" value="<%= params['search'] %>"/></p></form>
+<form><p><input name='search' type="search" placeholder="search" value="<%=h params['search'] %>"/></p></form>
 
-<p class='sub'>Showing <%= @start %> to <%= @start + 100 %> of <b><%= @size %></b> jobs</p>
+<p class='sub'>Showing <%=h @start %> to <%=h @start + 100 %> of <b><%=h @size %></b> jobs</p>
 <%= partial :next_more, :start => @start, :size => @size, :amount => 100 %>
 
 <ul class='failed'>
-  <%for job in @failed%>
+  <%for job_item in @failed%>
+    <% job, item = *job_item %>
     <% index += 1 %>
     <li>
       <dl>
         <dt>Worker</dt>
         <dd>
-          <a href="<%= url(:workers, job['worker']) %>"><%= job['worker'].split(':')[0...2].join(':') %></a> on <b class='queue-tag'><%= job['queue'] %></b > at <b><span class="time"><%= date job['failed_at'] %></span></b>
+          <a href="<%=h url(:workers, job['worker']) %>"><%=h job['worker'].split(':')[0...2].join(':') %></a> on <b class='queue-tag'><%= job['queue'] %></b > at <b><span class="time"><%=h date job['failed_at'] %></span></b>
           <div class='retry'>
             <% if job['retried_at'] %>
-              Retried <b><span class="time"><%= date job['retried_at'] %></span></b>
+              Retried <b><span class="time"><%=h date job['retried_at'] %></span></b>
             <% else %>
-              <a href="<%= u "failed/requeue/#{@start + index - 1}" %>" rel="retry">Retry</a>
+<!--               <a href="<%= u "failed/requeue/#{@start + index - 1}" %>" rel="retry">Retry</a> -->
+              <form method="POST" action="<%=u "/failed/requeue" %>" class='ajax retry'>
+                <input type="hidden" name='item' value='<%=h item %>'/>
+                <input type="submit" value='Retry'/>
+              </form>
             <% end %>
-            <form method="POST" action="<%=u "/failed/delete/#{@start + index - 1}" %>">
-              <input type="submit" name='' value='Delete'>
+            <form method="POST" action="<%=u "/failed/delete" %>" class='ajax delete'>
+              <input type="hidden" name='item' value='<%=h item %>'/>
+              <input type="submit" value='Delete'/>
             </form>
           </div>
         </dd>
         <dt>Class</dt>
-        <dd><code><%= job['payload'] ? job['payload']['class'] : 'nil' %></code></dd>
+        <dd><code><%=h job['payload'] ? job['payload']['class'] : 'nil' %></code></dd>
         <dt>Arguments</dt>
         <dd><code><%=h job['payload'] ? show_args(job['payload']['args']) : 'nil' %></code></dd>
-        <dt>Exception</td>
-        <dd><code><%= job['exception'] %></code></dd>
+        <dt>Exception</dt>
+        <dd><code><%=h job['exception'] %></code></dd>
         <dt>Error</dt>
         <dd class='error'>
           <% if job['backtrace'] %>
-            <a href="#" class="backtrace"><%= h(job['error']) %></a>
+            <a href="#" class="backtrace"><%=h job['error'] %></a>
             <pre style='display:none'><%=h job['backtrace'].join("\n") unless job['backtrace'].nil? %></pre>
           <% else %>
             <%=h job['error'] %>

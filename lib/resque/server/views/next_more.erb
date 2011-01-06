@@ -1,5 +1,5 @@
 <% amount = 20 unless defined? amount %>
-<% if  start - amount >= 0 || start + amount <= size %>
+<% if  (start - amount >= 0 || start + amount <= size rescue false) %>
 <p class='pagination'>
   <% if start - amount >= 0 %>
     <a href="<%= current_page %>?start=<%= start - amount %>" class='less'>&laquo; less</a>

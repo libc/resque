@@ -175,6 +175,17 @@ module Resque
     end
   end
 
+  def list_range_with_original_item(key, start = 0, count = 1)
+    if count == 1
+      item = redis.lindex(key, start)
+      [decode(item), item]
+    else
+      Array(redis.lrange(key, start, start+count-1)).map do |item|
+        [decode(item), item]
+      end
+    end
+  end
+
   # Returns an array of all known Resque queues as strings.
   def queues
     Array(redis.smembers(:queues))
