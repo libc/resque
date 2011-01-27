@@ -304,6 +304,7 @@ module Resque
           :worker    => self,
           :queue     => job["queue"]
         failed!
+        run_hook :before_shutdown, orig_payload
       end
     end
 
