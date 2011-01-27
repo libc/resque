@@ -106,6 +106,16 @@ module Resque
     block ? (after_fork << block) : after_fork.clear
   end
 
+  def before_shutdown(&block)
+    @before_shutdown ||= []
+    block ? (@before_shutdown << block) : @before_shutdown
+  end
+
+  # Set the before_shutdown proc.
+  def before_shutdown=(block)
+    block ? (before_shutdown << block) : before_shutdown.clear
+  end
+
   def to_s
     "Resque Client connected to #{redis_id}"
   end
