@@ -158,12 +158,17 @@ module Resque
         else
           @start = params[:start].to_i
           @failed = []
-          count = Resque::Failure.count
-          while count > @start and @failed.size < 100
-            @failed += Resque::Failure.all_with_original_item([count - 100, @start].max, count).select do |job|
+          last_position = Resque::Failure.count
+          last_position.step(@start, -100) do |position|
+            position = [position - 100, @start].max
+            last_position += 1 if last_position - position == 1
+
+            @failed.concat(Resque::Failure.all_with_original_item(position, last_position - position).select do |job|
               job.inspect.include? params['search']
-            end
-            count = count - 100
+            end)
+
+            break if @failed.size >= 100
+            last_position = position
           end
           @size = @failed.size
         end
