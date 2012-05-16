@@ -126,6 +126,10 @@ module Resque
         "<p class='poll'>#{text}</p>"
       end
 
+      def date(date)
+        Numeric === date ? Time.at(date).to_s : date
+      end
+
     end
 
     def show(page, layout = true)
@@ -177,6 +181,27 @@ module Resque
       if Resque::Failure.url
         redirect Resque::Failure.url
       else
+        @start = params[:start].to_i
+        unless params['search']
+          @failed = Resque::Failure.all_with_original_item(@start, 100)
+          @size = Resque::Failure.count
+        else
+          @start = params[:start].to_i
+          @failed = []
+          last_position = Resque::Failure.count
+          last_position.step(@start, -100) do |position|
+            position = [position - 100, @start].max
+            last_position += 1 if last_position - position == 1
+
+            @failed.concat(Resque::Failure.all_with_original_item(position, last_position - position).select do |job|
+              job.inspect.include? params['search']
+            end)
+
+            break if @failed.size >= 100
+            last_position = position
+          end
+          @size = @failed.size
+        end
         show :failed
       end
     end
@@ -196,7 +221,16 @@ module Resque
     get "/failed/requeue/:index/?" do
       Resque::Failure.requeue(params[:index])
       if request.xhr?
-        return Resque::Failure.all(params[:index])['retried_at']
+        return Time.now.to_i
+      else
+        redirect u('failed')
+      end
+    end
+
+    post "/failed/requeue" do
+      Resque::Failure.requeue_item(params['item'])
+      if request.xhr?
+        return Time.now.to_i
       else
         redirect u('failed')
       end
@@ -209,6 +243,15 @@ module Resque
 
     get "/stats/?" do
       redirect url_path("/stats/resque")
+    end
+
+    post "/failed/delete" do
+      num = Resque::Failure.delete_item(params['item'])
+      if request.xhr?
+        return num
+      else
+        redirect u('failed')
+      end
     end
 
     get "/stats/:id/?" do

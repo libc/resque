@@ -25,6 +25,10 @@ module Resque
         Resque.list_range(:failed, start, count)
       end
 
+      def self.all_with_original_item(start = 0, count = 1)
+        Resque.list_range_with_original_item(:failed, start, count)
+      end
+
       def self.clear
         Resque.redis.del(:failed)
       end
@@ -46,6 +50,20 @@ module Resque
         index = backtrace.index { |item| item.include?('/lib/resque/job.rb') }
         backtrace.first(index.to_i)
       end
+
+      # these methods are safer to use when indexes are changing (which happens a lot at soocial.com)
+      def self.delete_item(item)
+        x = Resque.redis.lrem(:failed, 1, item)
+      end
+
+      # NB this will remove the job from the failed queue.
+      def self.requeue_item(item)
+        decoded = Resque::decode(item)
+        decoded['retried_at'] = Time.now.to_i
+        Job.create(decoded['queue'], decoded['payload']['class'], *decoded['payload']['args'])
+        delete_item(item)
+      end
+
     end
   end
 end

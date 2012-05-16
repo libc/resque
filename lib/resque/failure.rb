@@ -49,6 +49,10 @@ module Resque
       backend.all(start, count)
     end
 
+    def self.all_with_original_item(start = 0, count = 1)
+      backend.all_with_original_item(start, count)
+    end
+
     # The string url of the backend's web interface, if any.
     def self.url
       backend.url
@@ -66,7 +70,7 @@ module Resque
     def self.remove(index)
       backend.remove(index)
     end
-    
+
     # Requeues all failed jobs in a specific queue.
     # Queue name should be a string.
     def self.requeue_queue(queue)
@@ -74,7 +78,7 @@ module Resque
       while job = Resque::Failure.all(i)
         if job['queue'] == queue
           Resque::Failure.requeue(i)
-        end  
+        end
         i+=1
       end
     end
@@ -88,9 +92,18 @@ module Resque
           # This will remove the failure from the array so do not increment the index.
           Resque::Failure.remove(i)
         else
-          i+=1    
+          i+=1
         end
       end
     end
+
+    def self.delete_item(item)
+      backend.delete_item(item)
+    end
+
+    def self.requeue_item(item)
+      backend.requeue_item(item)
+    end
+
   end
 end

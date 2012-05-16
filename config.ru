@@ -11,4 +11,5 @@ if ENV['RESQUECONFIG'] && ::File.exists?(::File.expand_path(ENV['RESQUECONFIG'])
 end
 
 use Rack::ShowExceptions
+use Rack::MethodOverride
 run Resque::Server.new

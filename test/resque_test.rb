@@ -281,4 +281,14 @@ describe "Resque" do
   it 'treats symbols and strings the same' do
     assert_equal Resque.queue(:people), Resque.queue('people')
   end
+
+  # doh!
+  it 'incrmenet failure on fail' do
+    Resque::Job.create(:jobs, BadJob, {}, {"attempts" => 10})
+    @worker = Resque::Worker.new(:jobs)
+    @worker.register_worker
+    @worker.process
+
+    assert_equal 11, Resque::Failure.all["payload"]["args"].last["attempts"]
+  end
 end
