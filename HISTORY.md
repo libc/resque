@@ -1,3 +1,155 @@
+## 1.20.0 (2012-02-17)
+
+* Fixed demos for ruby 1.9 (@BMorearty, #445)
+* Fixed `#requeue` tests (@hone, #500)
+* Web UI: optional trailing slashes of URLs (@elisehuard, #449)
+* Allow * to appear anywhere in queue list (@tapajos, #405, #407)
+* Wait for child with specific PID (@jacobkg)
+* #decode raise takes a string when re-raising as a different exception class (Trevor Hart)
+* Use Sinatra's `pubilc_folder` if it exists (@defunkt, #420, #421)
+* Assign the job's worker before calling `before_fork` (@quirkey)
+* Fix Resque::Helpers#constantize to work correctly on 1.9.2 (@rtlong)
+* Added before & after hooks for dequeue (@humancopy, #398)
+* daemonize support using `ENV["BACKGROUND"]` (@chrisleishman)
+* requeue and remove failed jobs by queue name (@evanwhalen)
+* `-r` flag for resque-web for redis connection (@gjastrab)
+* Added `Resque.enqueue_to`: allows you to specif the queue and still run hooks (@dan-g)
+* Web UI: Set the default encoding to UTF-8 (@elubow)
+* fix finding worker pids on JRuby (John Andrews + Andrew Grieser)
+* Added distributed redis support (@stipple)
+* Added better failure hooks (@raykrueger)
+* Added before & after dequeue hooks (@humancopy)
+
+## 1.19.0 (2011-09-01)
+
+* Added Airbrake (formerly Hoptoad) support.
+* Web UI: Added retry all button to failed jobs page
+* Web UI: Show focus outline
+
+## 1.18.6 (2011-08-30)
+
+* Bugfix: Use Rails 3 eager loading for resque:preload
+
+## 1.18.5 (2011-08-24)
+
+* Added support for Travis CI
+* Bugfix: preload only happens in production Rails environment
+
+## 1.18.4 (2011-08-23)
+
+* Bugfix: preload task depends on setup
+
+## 1.18.3 (2011-08-23)
+
+* Bugfix: Fix preloading on Rails 3.x.
+
+## 1.18.2 (2011-08-19)
+
+* Fix RAILS_ROOT deprecation warning
+
+## 1.18.1 (2011-08-19)
+
+* Bugfix: Use RAILS_ROOT in preload task
+
+## 1.18.0 (2011-08-18)
+
+* Added before_enqueue hook.
+* Resque workers now preload files under app/ in Rails
+* Switch to MultiJSON
+* Bugfix: Finding worker pids on Solaris
+* Web UI: Fix NaN days ago for worker screens
+* Web UI: Add Cache-Control header to prevent proxy caching
+* Web UI: Update Resque.redis_id so it can be used in a distributed ring.
+
+## 1.17.1 (2011-05-27)
+
+* Reverted `exit` change. Back to `exit!`.
+
+## 1.17.0 (2011-05-26)
+
+* Workers exit with `exit` instead of `exit!`. This means you
+  can now use `at_exit` hooks inside workers.
+* More monit typo fixes.
+* Fixed bug in Hoptoad backend.
+* Web UI: Wrap preformatted arguments.
+
+## 1.16.1 (2011-05-17)
+
+* Bugfix: Resque::Failure::Hoptoad.configure works again
+* Bugfix: Loading rake tasks
+
+## 1.16.0 (2011-05-16)
+
+* Optional Hoptoad backend extracted into hoptoad_notifier. Install the gem to use it.
+* Added `Worker#paused?` method
+* Bugfix: Properly reseed random number generator after forking.
+* Bugfix: Resque.redis=(<a Redis::Namespace>)
+* Bugfix: Monit example stdout/stderr redirection
+* Bugfix: Removing single failure now works with multiple failure backends
+* Web: 'Remove Queue' now requires confirmation
+* Web: Favicon!
+* Web Bugfix: Dates display in Safari
+* Web Bugfix: Dates display timezone
+* Web Bugfix: Race condition querying working workers
+* Web Bugfix: Fix polling /workers/all in resque-web
+
+## 1.15.0 (2011-03-18)
+
+* Fallback to Redis.connect. Makes ENV variables and whatnot work.
+* Fixed Sinatra 1.2 compatibility
+
+## 1.14.0 (2011-03-17)
+
+* Sleep interval can now be a float
+* Added Resque.inline to allow in-process performing of jobs (for testing)
+* Fixed tests for Ruby 1.9.2
+* Added Resque.validate(klass) to validate a Job
+* Decode errors are no longer ignored to help debugging
+* Web: Sinatra 1.2 compatibility
+* Fixed after_enqueue hook to actually run in `Resque.enqueue`
+* Fixed very_verbose timestamps to use 24 hour time (AM/PM wasn't included)
+* Fixed monit example
+* Fixed Worker#pid
+
+## 1.13.0 (2011-02-07)
+
+* Depend on redis-namespace >= 0.10
+* README tweaks
+* Use thread_safe option when setting redis url
+* Bugfix: worker pruning
+
+## 1.12.0 (2011-02-03)
+
+* Added pidfile writing from `rake resque:work`
+* Added Worker#pid method
+* Added configurable location for `rake install`
+* Bugfix: Errors in failure backend are rescue'd
+* Bugfix: Non-working workers no longer counted in "working" count
+* Bugfix: Don't think resque-web is a worker
+
+## 1.11.0 (2010-08-23)
+
+* Web UI: Group /workers page by hostnames
+
+## 1.10.0 (2010-08-23)
+
+* Support redis:// string format in `Resque.redis=`
+* Using new cross-platform JSON gem.
+* Added `after_enqueue` plugin hook.
+* Added `shutdown?` method which can be overridden.
+* Added support for the "leftright" gem when running tests.
+* Grammarfix: In the README
+
+## 1.9.10 (2010-08-06)
+
+* Bugfix: before_fork should get passed the job
+
+## 1.9.9 (2010-07-26)
+
+* Depend on redis-namespace 0.8.0
+* Depend on json_pure instead of json (for JRuby compat)
+* Bugfix: rails_env display in stats view
+
 ## 1.9.8 (2010-07-20)
 
 * Bugfix: Worker.all should never return nil

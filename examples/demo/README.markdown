@@ -33,7 +33,7 @@ You should see the following output:
 
 You can also use `VVERBOSE` (very verbose) if you want to see more:
 
-    $ VERBOSE=true QUEUE=default rake resque:work
+    $ VVERBOSE=true QUEUE=default rake resque:work
     *** Starting worker hostname:90399:default
     ** [05:55:09 2009-09-16] 90399: Registered signals
     ** [05:55:09 2009-09-16] 90399: Checking default
@@ -54,7 +54,7 @@ Great, now let's check out the Resque frontend. Either click on 'View
 Resque' in your web browser or run:
 
     $ open http://localhost:9292/resque/
-    
+
 You should see the Resque web frontend. 404 page? Don't forget the
 trailing slash!
 

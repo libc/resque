@@ -1,10 +1,15 @@
+require 'rubygems'
+
 dir = File.dirname(File.expand_path(__FILE__))
 $LOAD_PATH.unshift dir + '/../lib'
 $TESTING = true
+require 'mocha'
+require 'minitest/unit'
+require 'minitest/spec'
 require 'test/unit'
-require 'rubygems'
-require 'resque'
 
+require 'redis/namespace'
+require 'resque'
 
 #
 # make sure we can run redis
@@ -31,37 +36,27 @@ at_exit do
     exit_code = Test::Unit::AutoRunner.run
   end
 
-  pid = `ps -A -o pid,command | grep [r]edis-test`.split(" ")[0]
+  processes = `ps -A -o pid,command | grep [r]edis-test`.split("\n")
+  pids = processes.map { |process| process.split(" ")[0] }
   puts "Killing test redis server..."
-  `rm -f #{dir}/dump.rdb`
-  Process.kill("KILL", pid.to_i)
+  `rm -f #{dir}/dump.rdb #{dir}/dump-cluster.rdb`
+  pids.each { |pid| Process.kill("KILL", pid.to_i) }
   exit exit_code
 end
 
-puts "Starting redis for testing at localhost:9736..."
-`redis-server #{dir}/redis-test.conf`
-Resque.redis = 'localhost:9736'
-
-
-##
-# test/spec/mini 3
-# http://gist.github.com/25455
-# chris@ozmm.org
-#
-def context(*args, &block)
-  return super unless (name = args.first) && block
-  require 'test/unit'
-  klass = Class.new(defined?(ActiveSupport::TestCase) ? ActiveSupport::TestCase : Test::Unit::TestCase) do
-    def self.test(name, &block)
-      define_method("test_#{name.gsub(/\W/,'_')}", &block) if block
-    end
-    def self.xtest(*args) end
-    def self.setup(&block) define_method(:setup, &block) end
-    def self.teardown(&block) define_method(:teardown, &block) end
-  end
-  (class << klass; self end).send(:define_method, :name) { name.gsub(/\W/,'_') }
-  klass.class_eval &block
+if ENV.key? 'RESQUE_DISTRIBUTED'
+  require 'redis/distributed'
+  puts "Starting redis for testing at localhost:9736 and localhost:9737..."
+  `redis-server #{dir}/redis-test.conf`
+  `redis-server #{dir}/redis-test-cluster.conf`
+  r = Redis::Distributed.new(['redis://localhost:9736', 'redis://localhost:9737'])
+  Resque.redis = Redis::Namespace.new :resque, :redis => r
+else
+  puts "Starting redis for testing at localhost:9736..."
+  `redis-server #{dir}/redis-test.conf`
+  Resque.redis = 'localhost:9736'
 end
+
 
 ##
 # Helper to perform job classes
@@ -108,4 +103,33 @@ class BadJobWithSyntaxError
   def self.perform
     raise SyntaxError, "Extra Bad job!"
   end
+end
+
+class BadFailureBackend < Resque::Failure::Base
+  def save
+    raise Exception.new("Failure backend error")
+  end
+end
+
+def with_failure_backend(failure_backend, &block)
+  previous_backend = Resque::Failure.backend
+  Resque::Failure.backend = failure_backend
+  yield block
+ensure
+  Resque::Failure.backend = previous_backend
+end
+
+class Time
+  # Thanks, Timecop
+  class << self
+    attr_accessor :fake_time
+
+    alias_method :now_without_mock_time, :now
+
+    def now
+      fake_time || now_without_mock_time
+    end
+  end
+
+  self.fake_time = nil
 end

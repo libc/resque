@@ -6,31 +6,12 @@ module Resque
       Resque.redis
     end
 
-    # Given a Ruby object, returns a string suitable for storage in a
-    # queue.
     def encode(object)
-      if defined? Yajl
-        Yajl::Encoder.encode(object)
-      else
-        object.to_json
-      end
+      Resque.coder.encode(object)
     end
 
-    # Given a string, returns a Ruby object.
     def decode(object)
-      return unless object
-
-      if defined? Yajl
-        begin
-          Yajl::Parser.parse(object, :check_utf8 => false)
-        rescue Yajl::ParseError
-        end
-      else
-        begin
-          JSON.parse(object)
-        rescue JSON::ParserError
-        end
-      end
+      Resque.coder.decode(object)
     end
 
     # Given a word with dashes, returns a camel cased version of it.
@@ -40,9 +21,23 @@ module Resque
       dashed_word.split('-').each { |part| part[0] = part[0].chr.upcase }.join
     end
 
-    # Given a camel cased word, returns the constant it represents
+    # Tries to find a constant with the name specified in the argument string:
     #
-    # constantize('JobName') # => JobName
+    # constantize("Module") # => Module
+    # constantize("Test::Unit") # => Test::Unit
+    #
+    # The name is assumed to be the one of a top-level constant, no matter
+    # whether it starts with "::" or not. No lexical context is taken into
+    # account:
+    #
+    # C = 'outside'
+    # module M
+    #   C = 'inside'
+    #   C # => 'inside'
+    #   constantize("C") # => 'outside', same as ::C
+    # end
+    #
+    # NameError is raised when the constant is unknown.
     def constantize(camel_cased_word)
       camel_cased_word = camel_cased_word.to_s
 
@@ -55,7 +50,13 @@ module Resque
 
       constant = Object
       names.each do |name|
-        constant = constant.const_get(name) || constant.const_missing(name)
+        args = Module.method(:const_get).arity != 1 ? [false] : []
+
+        if constant.const_defined?(name, *args)
+          constant = constant.const_get(name)
+        else
+          constant = constant.const_missing(name)
+        end
       end
       constant
     end

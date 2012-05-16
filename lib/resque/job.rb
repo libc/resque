@@ -40,15 +40,13 @@ module Resque
     #
     # Raises an exception if no queue or class is given.
     def self.create(queue, klass, *args)
-      if !queue
-        raise NoQueueError.new("Jobs must be placed onto a queue.")
-      end
+      Resque.validate(klass, queue)
 
-      if klass.to_s.empty?
-        raise NoClassError.new("Jobs must be given a class.")
+      if Resque.inline?
+        constantize(klass).perform(*decode(encode(args)))
+      else
+        Resque.push(queue, :class => klass.to_s, :args => args)
       end
-
-      Resque.push(queue, :class => klass.to_s, :args => args)
     end
 
     # Removes a job from a queue. Expects a string queue name, a
@@ -108,11 +106,6 @@ module Resque
       job_args = args || []
       job_was_performed = false
 
-      before_hooks  = Plugin.before_hooks(job)
-      around_hooks  = Plugin.around_hooks(job)
-      after_hooks   = Plugin.after_hooks(job)
-      failure_hooks = Plugin.failure_hooks(job)
-
       begin
         # Execute before_perform hook. Abort the job gracefully if
         # Resque::DontPerform is raised.
@@ -160,7 +153,7 @@ module Resque
       # If an exception occurs during the job execution, look for an
       # on_failure hook then re-raise.
       rescue Object => e
-        failure_hooks.each { |hook| job.send(hook, e, *job_args) }
+        run_failure_hooks(e)
         raise e
       end
     end
@@ -180,7 +173,8 @@ module Resque
     def fail(exception)
       orig_payload = payload
       orig_attempts = payload["args"].last["attempts"]
-      orig_payload["args"].last.merge!(!{"attempts" => (orig_attempts + 1), "updated_at" => Time.now.to_i})
+      orig_payload["args"].last.merge!({"attempts" => (orig_attempts + 1), "updated_at" => Time.now.to_i})
+      run_failure_hooks(exception)
       Failure.create \
         :payload   => orig_payload,
         :exception => exception,
@@ -206,5 +200,27 @@ module Resque
         payload_class == other.payload_class &&
         args == other.args
     end
+
+    def before_hooks
+      @before_hooks ||= Plugin.before_hooks(payload_class)
+    end
+
+    def around_hooks
+      @around_hooks ||= Plugin.around_hooks(payload_class)
+    end
+
+    def after_hooks
+      @after_hooks ||= Plugin.after_hooks(payload_class)
+    end
+
+    def failure_hooks
+      @failure_hooks ||= Plugin.failure_hooks(payload_class)
+    end
+
+    def run_failure_hooks(exception)
+      job_args = args || []
+      failure_hooks.each { |hook| payload_class.send(hook, exception, *job_args) }
+    end
+
   end
 end

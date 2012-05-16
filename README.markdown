@@ -1,16 +1,17 @@
 Resque
 ======
 
-Resque is a Redis-backed library for creating background jobs, placing
-those jobs on multiple queues, and processing them later.
+Resque (pronounced like "rescue") is a Redis-backed library for creating
+background jobs, placing those jobs on multiple queues, and processing
+them later.
 
 Background jobs can be any Ruby class or module that responds to
 `perform`. Your existing classes can easily be converted to background
 jobs or you can create new classes specifically to do work. Or, you
 can do both.
 
-Resque is heavily inspired by DelayedJob (which rocks) and is
-comprised of three parts:
+Resque is heavily inspired by DelayedJob (which rocks) and comprises
+three parts:
 
 1. A Ruby library for creating, querying, and processing jobs
 2. A Rake task for starting a worker which processes jobs
@@ -46,14 +47,17 @@ later, pull those jobs off the queue and process them.
 Resque jobs are Ruby classes (or modules) which respond to the
 `perform` method. Here's an example:
 
-    class Archive
-      @queue = :file_serve
 
-      def self.perform(repo_id, branch = 'master')
-        repo = Repository.find(repo_id)
-        repo.create_archive(branch)
-      end
-    end
+``` ruby
+class Archive
+  @queue = :file_serve
+
+  def self.perform(repo_id, branch = 'master')
+    repo = Repository.find(repo_id)
+    repo.create_archive(branch)
+  end
+end
+```
 
 The `@queue` class instance variable determines which queue `Archive`
 jobs will be placed in. Queues are arbitrary and created on the fly -
@@ -62,11 +66,13 @@ you can name them whatever you want and have as many as you want.
 To place an `Archive` job on the `file_serve` queue, we might add this
 to our application's pre-existing `Repository` class:
 
-    class Repository
-      def async_create_archive(branch)
-        Resque.enqueue(Archive, self.id, branch)
-      end
-    end
+``` ruby
+class Repository
+  def async_create_archive(branch)
+    Resque.enqueue(Archive, self.id, branch)
+  end
+end
+```
 
 Now when we call `repo.async_create_archive('masterbrew')` in our
 application, a job will be created and placed on the `file_serve`
@@ -74,12 +80,16 @@ queue.
 
 Later, a worker will run something like this code to process the job:
 
-    klass, args = Resque.reserve(:file_serve)
-    klass.perform(*args) if klass.respond_to? :perform
+``` ruby
+klass, args = Resque.reserve(:file_serve)
+klass.perform(*args) if klass.respond_to? :perform
+```
 
 Which translates to:
 
-    Archive.perform(44, 'masterbrew')
+``` ruby
+Archive.perform(44, 'masterbrew')
+```
 
 Let's start a worker to run `file_serve` jobs:
 
@@ -128,25 +138,33 @@ needs to be crunched later into a queue.
 Jobs are persisted to queues as JSON objects. Let's take our `Archive`
 example from above. We'll run the following code to create a job:
 
-    repo = Repository.find(44)
-    repo.async_create_archive('masterbrew')
+``` ruby
+repo = Repository.find(44)
+repo.async_create_archive('masterbrew')
+```
 
 The following JSON will be stored in the `file_serve` queue:
 
-    {
-        'class': 'Archive',
-        'args': [ 44, 'masterbrew' ]
-    }
+``` javascript
+{
+    'class': 'Archive',
+    'args': [ 44, 'masterbrew' ]
+}
+```
 
 Because of this your jobs must only accept arguments that can be JSON encoded.
 
 So instead of doing this:
 
-    Resque.enqueue(Archive, self, branch)
+``` ruby
+Resque.enqueue(Archive, self, branch)
+```
 
 do this:
 
-    Resque.enqueue(Archive, self.id, branch)
+``` ruby
+Resque.enqueue(Archive, self.id, branch)
+```
 
 This is why our above example (and all the examples in `examples/`)
 uses object IDs instead of passing around the objects.
@@ -186,15 +204,17 @@ Workers
 
 Resque workers are rake tasks that run forever. They basically do this:
 
-    start
-    loop do
-      if job = reserve
-        job.process
-      else
-        sleep 5
-      end
-    end
-    shutdown
+``` ruby
+start
+loop do
+  if job = reserve
+    job.process
+  else
+    sleep 5 # Polling frequency = 5 
+  end
+end
+shutdown
+```
 
 Starting a worker is simple. Here's our example from earlier:
 
@@ -213,13 +233,17 @@ This will load the environment before starting a worker. Alternately
 we can define a `resque:setup` task with a dependency on the
 `environment` rake task:
 
-    task "resque:setup" => :environment
+``` ruby
+task "resque:setup" => :environment
+```
 
 GitHub's setup task looks like this:
 
-    task "resque:setup" => :environment do
-      Grit::Git.git_timeout = 10.minutes
-    end
+``` ruby
+task "resque:setup" => :environment do
+  Grit::Git.git_timeout = 10.minutes
+end
+```
 
 We don't want the `git_timeout` as high as 10 minutes in our web app,
 but in the Resque workers it's fine.
@@ -234,6 +258,29 @@ variable.
 
     $ VVERBOSE=1 QUEUE=file_serve rake environment resque:work
 
+### Process IDs (PIDs)
+
+There are scenarios where it's helpful to record the PID of a resque
+worker process.  Use the PIDFILE option for easy access to the PID:
+
+    $ PIDFILE=./resque.pid QUEUE=file_serve rake environment resque:work
+
+### Running in the background
+
+(Only supported with ruby >= 1.9). There are scenarios where it's helpful for
+the resque worker to run itself in the background (usually in combination with
+PIDFILE).  Use the BACKGROUND option so that rake will return as soon as the
+worker is started.
+
+    $ PIDFILE=./resque.pid BACKGROUND=yes QUEUE=file_serve \
+        rake environment resque:work
+
+### Polling frequency
+
+You can pass an INTERVAL option which is a float representing the polling frequency. 
+The default is 5 seconds, but for a semi-active app you may want to use a smaller value.
+
+    $ INTERVAL=0.1 QUEUE=file_serve rake environment resque:work
 
 ### Priorities and Queue Lists
 
@@ -393,7 +440,7 @@ The Front End
 Resque comes with a Sinatra-based front end for seeing what's up with
 your queue.
 
-![The Front End](http://img.skitch.com/20091104-tqh5pgkwgbskjbk7qbtmpesnyw.jpg)
+![The Front End](https://img.skitch.com/20110528-pc67a8qsfapgjxf5gagxd92fcu.png)
 
 ### Standalone
 
@@ -414,26 +461,41 @@ You can also set the namespace directly using `resque-web`:
 
     $ resque-web -p 8282 -N myapp
 
+or set the Redis connection string if you need to do something like select a different database:
+
+    $ resque-web -p 8282 -r localhost:6379:2
+
 ### Passenger
 
 Using Passenger? Resque ships with a `config.ru` you can use. See
 Phusion's guide:
 
-<http://www.modrails.com/documentation/Users%20guide.html#_deploying_a_rack_based_ruby_application>
+Apache: <http://www.modrails.com/documentation/Users%20guide%20Apache.html#_deploying_a_rack_based_ruby_application>
+Nginx: <http://www.modrails.com/documentation/Users%20guide%20Nginx.html#deploying_a_rack_app>
 
 ### Rack::URLMap
 
 If you want to load Resque on a subpath, possibly alongside other
 apps, it's easy to do with Rack's `URLMap`:
 
-    require 'resque/server'
+``` ruby
+require 'resque/server'
 
-    run Rack::URLMap.new \
-      "/"       => Your::App.new,
-      "/resque" => Resque::Server.new
+run Rack::URLMap.new \
+  "/"       => Your::App.new,
+  "/resque" => Resque::Server.new
+```
 
 Check `examples/demo/config.ru` for a functional example (including
 HTTP basic auth).
+
+### Rails 3
+
+You can also mount Resque on a subpath in your existing Rails 3 app by adding `require 'resque/server'` to the top of your routes file or in an initializer then adding this to `routes.rb`:
+
+``` ruby
+mount Resque::Server.new, :at => "/resque"
+```
 
 
 Resque vs DelayedJob
@@ -526,13 +588,8 @@ together. But, it's not that hard.
 Resque Dependencies
 -------------------
 
-    gem install redis redis-namespace yajl-ruby
-
-If you cannot install `yajl-ruby` (JRuby?), you can install the `json`
-gem and Resque will use it instead.
-
-When problems arise, make sure you have the newest versions of the
-`redis` and `redis-namespace` gems.
+    $ gem install bundler
+    $ bundle install
 
 
 Installing Resque
@@ -546,7 +603,9 @@ First install the gem.
 
 Next include it in your application.
 
-    require 'resque'
+``` ruby
+require 'resque'
+```
 
 Now start your application:
 
@@ -557,8 +616,10 @@ That's it! You can now create Resque jobs from within your app.
 To start a worker, create a Rakefile in your app's root (or add this
 to an existing Rakefile):
 
-    require 'your/app'
-    require 'resque/tasks'
+``` ruby
+require 'your/app'
+require 'resque/tasks'
+```
 
 Now:
 
@@ -568,7 +629,7 @@ Alternately you can define a `resque:setup` hook in your Rakefile if you
 don't want to load your app every time rake runs.
 
 
-### In a Rails app, as a gem
+### In a Rails 2.x app, as a gem
 
 First install the gem.
 
@@ -587,7 +648,9 @@ That's it! You can now create Resque jobs from within your app.
 
 To start a worker, add this to your Rakefile in `RAILS_ROOT`:
 
-    require 'resque/tasks'
+``` ruby
+require 'resque/tasks'
+```
 
 Now:
 
@@ -597,7 +660,7 @@ Don't forget you can define a `resque:setup` hook in
 `lib/tasks/whatever.rake` that loads the `environment` task every time.
 
 
-### In a Rails app, as a plugin
+### In a Rails 2.x app, as a plugin
 
     $ ./script/plugin install git://github.com/defunkt/resque
 
@@ -605,6 +668,40 @@ That's it! Resque will automatically be available when your Rails app
 loads.
 
 To start a worker:
+
+    $ QUEUE=* rake environment resque:work
+
+Don't forget you can define a `resque:setup` hook in
+`lib/tasks/whatever.rake` that loads the `environment` task every time.
+
+
+### In a Rails 3 app, as a gem
+
+First include it in your Gemfile.
+
+    $ cat Gemfile
+    ...
+    gem 'resque'
+    ...
+
+Next install it with Bundler.
+
+    $ bundle install
+
+Now start your application:
+
+    $ rails server
+
+That's it! You can now create Resque jobs from within your app.
+
+To start a worker, add this to a file in `lib/tasks` (ex:
+`lib/tasks/resque.rake`):
+
+``` ruby
+require 'resque/tasks'
+```
+
+Now:
 
     $ QUEUE=* rake environment resque:work
 
@@ -640,11 +737,13 @@ Here's our `config/resque.yml`:
 
 And our initializer:
 
-    rails_root = ENV['RAILS_ROOT'] || File.dirname(__FILE__) + '/../..'
-    rails_env = ENV['RAILS_ENV'] || 'development'
+``` ruby
+rails_root = ENV['RAILS_ROOT'] || File.dirname(__FILE__) + '/../..'
+rails_env = ENV['RAILS_ENV'] || 'development'
 
-    resque_config = YAML.load_file(rails_root + '/config/resque.yml')
-    Resque.redis = resque_config[rails_env]
+resque_config = YAML.load_file(rails_root + '/config/resque.yml')
+Resque.redis = resque_config[rails_env]
+```
 
 Easy peasy! Why not just use `RAILS_ROOT` and `RAILS_ENV`? Because
 this way we can tell our Sinatra app about the config file:
@@ -652,6 +751,13 @@ this way we can tell our Sinatra app about the config file:
     $ RAILS_ENV=production resque-web rails_root/config/initializers/resque.rb
 
 Now everyone is on the same page.
+
+Also, you could disable jobs queueing by setting 'inline' attribute.
+For example, if you want to run all jobs in the same process for cucumber, try:
+
+``` ruby
+Resque.inline = ENV['RAILS_ENV'] == "cucumber"
+```
 
 
 Plugins and Hooks
@@ -678,7 +784,9 @@ in your Redis server.
 
 Simply use the `Resque.redis.namespace` accessor:
 
-    Resque.redis.namespace = "resque:GitHub"
+``` ruby
+Resque.redis.namespace = "resque:GitHub"
+```
 
 We recommend sticking this in your initializer somewhere after Redis
 is configured.
@@ -707,6 +815,13 @@ the other is for killing workers that have been running too long.
 If you're using monit, `examples/monit/resque.monit` is provided free
 of charge. This is **not** used by GitHub in production, so please
 send patches for any tweaks or improvements you can make to it.
+
+
+Questions
+---------
+
+Please add them to the [FAQ](https://github.com/defunkt/resque/wiki/FAQ) or
+ask on the Mailing List. The Mailing List is explained further below
 
 
 Development
@@ -745,16 +860,15 @@ sort it out.
 Contributing
 ------------
 
+Read the [Contributing][cb] wiki page first. 
+
 Once you've made your great commits:
 
 1. [Fork][1] Resque
 2. Create a topic branch - `git checkout -b my_branch`
 3. Push to your branch - `git push origin my_branch`
-4. Create an [Issue][2] with a link to your branch
+4. Create a [Pull Request](http://help.github.com/pull-requests/) from your branch
 5. That's it!
-
-You might want to checkout our [Contributing][cb] wiki page for information
-on coding standards, new features, etc.
 
 
 Mailing List
@@ -764,7 +878,7 @@ To join the list simply send an email to <resque@librelist.com>. This
 will subscribe you and send you information about your subscription,
 including unsubscribe information.
 
-The archive can be found at <http://librelist.com/browser/>.
+The archive can be found at <http://librelist.com/browser/resque/>.
 
 
 Meta

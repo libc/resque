@@ -8,7 +8,7 @@ Gem::Specification.new do |s|
   s.summary           = "Resque is a Redis-backed queueing system."
   s.homepage          = "http://github.com/defunkt/resque"
   s.email             = "chris@ozmm.org"
-  s.authors           = [ "Chris Wanstrath" ]
+  s.authors           = [ "Chris Wanstrath", "Terence Lee" ]
 
   s.files             = %w( README.markdown Rakefile LICENSE HISTORY.md )
   s.files            += Dir.glob("lib/**/*")
@@ -21,10 +21,10 @@ Gem::Specification.new do |s|
   s.extra_rdoc_files  = [ "LICENSE", "README.markdown" ]
   s.rdoc_options      = ["--charset=UTF-8"]
 
-  s.add_dependency "redis-namespace", "~> 0.7.0"
+  s.add_dependency "redis-namespace", "~> 1.0.2"
   s.add_dependency "vegas",           "~> 0.1.2"
   s.add_dependency "sinatra",         ">= 0.9.2"
-  s.add_dependency "json",            ">= 1.1.0"
+  s.add_dependency "multi_json",      "~> 1.0"
 
   s.description = <<description
     Resque is a Redis-backed Ruby library for creating background jobs,

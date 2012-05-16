@@ -2,8 +2,7 @@
 # Setup
 #
 
-load 'tasks/redis.rake'
-require 'rake/testtask'
+load 'lib/tasks/redis.rake'
 
 $LOAD_PATH.unshift 'lib'
 require 'resque/tasks'
@@ -17,14 +16,15 @@ end
 # Tests
 #
 
+require 'rake/testtask'
+
 task :default => :test
 
-desc "Run the test suite"
-task :test do
-  rg = command?(:rg)
-  Dir['test/**/*_test.rb'].each do |f|
-    rg ? sh("rg #{f}") : ruby(f)
-  end
+Rake::TestTask.new do |test|
+  test.verbose = true
+  test.libs << "test"
+  test.libs << "lib"
+  test.test_files = FileList['test/**/*_test.rb']
 end
 
 if command? :kicker
@@ -67,5 +67,4 @@ task :publish do
   sh "git push origin v#{Resque::Version}"
   sh "git push origin master"
   sh "git clean -fd"
-  exec "rake pages"
 end

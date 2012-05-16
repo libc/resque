@@ -3,17 +3,17 @@ require 'resque/server'
 
 module Resque
   module TestHelper
-    class Test::Unit::TestCase
+    class MiniTest::Unit::TestCase
       include Rack::Test::Methods
-      def app 
+      def app
         Resque::Server.new
       end 
 
       def self.should_respond_with_success
-        test "should respond with success" do
+        it "should respond with success" do
           assert last_response.ok?, last_response.errors
-        end 
-      end 
+        end
+      end
     end
   end
 end
